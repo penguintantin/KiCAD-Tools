@@ -37,9 +37,9 @@ class Library:
 		self.modules=[]
 		self.unit="mm"
 		if os.path.isdir(self.current_dir):
-			print "Directory exist"
+			print ("Directory exist")
 		else:
-			print "make directory"
+			print ("make directory")
 			os.mkdir(self.current_dir)
 class Module:
 	def __init__(self,name,layer="F.Cu"):
@@ -109,9 +109,9 @@ class Circle:
 		self.PenWidth = PenWidth
 		self.Layer=layer
 class Arc:
-	def __init__(self,x=0,y=0,xp=0,yp=0,angle=0,PenWidth=0.1,layer="F.Cu"):
-		self.x = x
-		self.y = y
+	def __init__(self,cx=0,cy=0,xp=0,yp=0,angle=0,PenWidth=0.1,layer="F.Cu"):
+		self.x = cx
+		self.y = cy
 		self.xp = xp
 		self.yp = yp
 		self.angle=angle
@@ -145,31 +145,14 @@ class Pad:
 		self.DrillW=drillw
 		self.DrillH=drillh
 		self.dfig="circular" #or oval
-		if drillW!=drillh:
+		if drillw!=drillh:
 			self.dfig="oval"
+		if drillw<=0.0 or drillh<=0.0:
+			if drilld>0.0:
+				self.DrillW=drilld
+				self.DrillH=drilld
 		self.netName=""
 		#self.LayerFlag="N"
-
-class Pad_old:
-	def __init__(self,num=1,x=0,y=0,padtype="thru_hole",padfig="circle",xsize=1.0,ysize=1.0,drilld=1.0,drillw=0.0,drillh=0.0):
-		self.num = num
-		self.x = x
-		self.y = y
-		self.fig=padfig
-		self.type = padtype
-		self.xsize = xsize
-		self.ysize = ysize
-		#self.ybaseincrease=0
-		#self.xbaseincrease=0
-		self.angle=0
-		self.DrillDia=drilld
-		self.DrillXOffset=0
-		self.DrillYOffset=0
-		self.DrillW=drillw
-		self.DrillH=drillh
-		self.dfig="circular" #or oval
-		self.netName=""
-		self.LayerFlag="N"
 
 def OutModule(lib):
 	for mod in lib.modules:
@@ -184,7 +167,8 @@ def DrawCircle(cir):
 	ret="  (fp_circle (center " + str(cir.x) + " " + str(cir.y) + ") (end " + str(cir.xp) + " " + str(cir.yp)  + ") (layer " + str(cir.Layer) + ") (width " + str(cir.PenWidth) +"))\n"
 	return ret
 def DrawArc(arc):
-	ret="  (fp_arc (start " + str(arc.y) + " " + str(arc.xp) + ") (end " + str(arc.xp) + " " + str(arc.yp) + ") (angle " + str(arc.angle) + ") (layer " + str(arc.Layer) + ") (width " + str(arc.PenWidth) + "))\n"	
+	#ret="  (fp_arc (start " + str(arc.y) + " " + str(arc.xp) + ") (end " + str(arc.xp) + " " + str(arc.yp) + ") (angle " + str(arc.angle) + ") (layer " + str(arc.Layer) + ") (width " + str(arc.PenWidth) + "))\n"	
+	ret="  (fp_arc (start " + str(arc.x) + " " + str(arc.y) + ") (end " + str(arc.xp) + " " + str(arc.yp) + ") (angle " + str(arc.angle) + ") (layer " + str(arc.Layer) + ") (width " + str(arc.PenWidth) + "))\n"
 	return ret
 def DrawPolygon(poly):
 	ret="  (fp_poly (pts "
@@ -242,7 +226,8 @@ def DrawPad(pad):
 #"connect", "np_thru_hole"
 #drillw=0.0,drillh=0.0
 	if pad.type=="thru_hole":
-		layers="*.Cu *.Mask F.SilkS"
+		#layers="*.Cu *.Mask F.SilkS"
+		layers="*.Cu *.Mask"
 	elif pad.type=="smd":
 		layers="F.Cu F.Paste F.Mask"
 	elif pad.type=="connect":
@@ -250,7 +235,7 @@ def DrawPad(pad):
 	elif pad.type=="np_thru_hole":
 		layers="*.Cu *.Mask F.SilkS"
 	else:
-		print "Pad Type Error"
+		print ("Pad Type Error")
 		return
 	#dfig=""
 	#if pad.dfig=="oval":
@@ -269,9 +254,19 @@ def rad2deg(angle):
 	ret=round(ret, 5)*10
 	return ret
 
+def PadCheck(padtype,padfig):
+	if padfig != "circle" and padfig != "rect":
+		print ("Pad figure Error:",padfig)
+		return 1
+	if padtype != "thru_hole" and padtype != "smd" and padtype != "connect" and padtype != "np_thru_hole":
+		print ("Pad Type Error:",padtype)
+		return 1
+	return 0
 ########## Extra functions ############
 #(self,num=1,x=0,y=0,padtype="thru_hole",padfig="circle",xsize=1.0,ysize=1.0,drilld=1.0,drillw=0.0,drillh=0.0)
 def Pads(mod,points,nums,padtype,padfig,xsize,ysize,drilld):
+	if PadCheck(padtype,padfig):
+		return
 	if len(points)!=len(nums):
 		print("points and nums are not same size")
 		return
